@@ -247,24 +247,18 @@
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 35 },
       "id": 20,
       "type": "timeseries",
-      "title": "Log Volume by Severity",
-      "description": "Copilot log event volume split by severity level",
+      "title": "Log Volume by Event Type",
+      "description": "Copilot log event volume split by event type",
       "datasource": { "type": "loki", "uid": "loki" },
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
           "custom": { "lineWidth": 2, "fillOpacity": 20, "showPoints": "never", "stacking": { "mode": "normal" } },
           "unit": "short"
-        },
-        "overrides": [
-          { "matcher": { "id": "byRegexp", "options": "error|ERROR" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] },
-          { "matcher": { "id": "byRegexp", "options": "warn|WARN" }, "properties": [{ "id": "color", "value": { "fixedColor": "yellow", "mode": "fixed" } }] },
-          { "matcher": { "id": "byRegexp", "options": "info|INFO" }, "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }] },
-          { "matcher": { "id": "byRegexp", "options": "debug|DEBUG" }, "properties": [{ "id": "color", "value": { "fixedColor": "blue", "mode": "fixed" } }] }
-        ]
+        }
       },
       "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["sum"] }, "tooltip": { "mode": "multi", "sort": "desc" } },
-      "targets": [{ "expr": "sum by (detected_level) (count_over_time({service_name=~\"$service\"} [$__auto]))", "legendFormat": "{{detected_level}}", "refId": "A" }]
+      "targets": [{ "expr": "sum by (event_name) (count_over_time({service_name=~\"$service\"} | event_name != \"\" [$__auto]))", "legendFormat": "{{event_name}}", "refId": "A" }]
     },
     {
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 35 },
@@ -325,7 +319,7 @@
       "datasource": { "type": "loki", "uid": "loki" },
       "targets": [{
         "datasource": { "type": "loki", "uid": "loki" },
-        "expr": "{service_name=~\"$service\"} | json",
+        "expr": "{service_name=~\"$service\"}",
         "refId": "A"
       }],
       "options": {
