@@ -1,0 +1,507 @@
+{
+  "annotations": { "list": [] },
+  "description": "Deep analytics for GitHub Copilot — AI model performance, token usage, language breakdown, error intelligence, and detailed trace/log exploration",
+  "editable": true,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    { "title": "← Copilot Usage", "url": "/d/copilot-usage", "type": "link", "icon": "apps", "targetBlank": false },
+    { "title": "Traces Explorer", "url": "/d/traces-explorer", "type": "link", "icon": "bolt", "targetBlank": false },
+    { "title": "Logs Explorer", "url": "/d/logs-explorer", "type": "link", "icon": "file-alt", "targetBlank": false }
+  ],
+  "panels": [
+    {
+      "gridPos": { "h": 3, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "type": "text",
+      "title": "",
+      "options": {
+        "mode": "markdown",
+        "content": "## GitHub Copilot — Smart Insights\nDeep-dive analytics derived from Copilot OpenTelemetry data. Includes **AI model & token analysis** (from Loki logs), **performance profiling** (from Tempo span-metrics), and **error intelligence**. Queries extract `gen_ai.*` attributes from structured logs and traces."
+      }
+    },
+
+    {
+      "gridPos": { "h": 2, "w": 24, "x": 0, "y": 3 },
+      "id": 101,
+      "type": "text",
+      "title": "",
+      "options": { "mode": "markdown", "content": "---\n### AI Model & Token Analytics\nInsights extracted from log attributes: `gen_ai.request.model`, `gen_ai.usage.input_tokens`, `gen_ai.usage.output_tokens`" }
+    },
+    {
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 5 },
+      "id": 1,
+      "type": "stat",
+      "title": "Total Input Tokens",
+      "description": "Sum of gen_ai.usage.input_tokens from logs",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "blue", "value": null }] },
+          "unit": "short",
+          "noValue": "0"
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["sum"] } },
+      "targets": [{ "expr": "sum_over_time({service_name=~\"$service\"} | json | unwrap gen_ai_usage_input_tokens [$__range])", "legendFormat": "", "refId": "A", "instant": true }]
+    },
+    {
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 5 },
+      "id": 2,
+      "type": "stat",
+      "title": "Total Output Tokens",
+      "description": "Sum of gen_ai.usage.output_tokens from logs",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "purple", "value": null }] },
+          "unit": "short",
+          "noValue": "0"
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["sum"] } },
+      "targets": [{ "expr": "sum_over_time({service_name=~\"$service\"} | json | unwrap gen_ai_usage_output_tokens [$__range])", "legendFormat": "", "refId": "A", "instant": true }]
+    },
+    {
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 5 },
+      "id": 3,
+      "type": "stat",
+      "title": "Distinct Models Used",
+      "description": "Count of unique AI models observed in logs",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "orange", "value": null }] },
+          "unit": "short",
+          "noValue": "0"
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "count(sum by (gen_ai_request_model) (count_over_time({service_name=~\"$service\"} | json | gen_ai_request_model != \"\" [$__range])))", "legendFormat": "", "refId": "A", "instant": true }]
+    },
+    {
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 5 },
+      "id": 4,
+      "type": "stat",
+      "title": "Avg Output / Input Ratio",
+      "description": "Average ratio of output tokens to input tokens (efficiency indicator)",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "green", "value": null }] },
+          "unit": "percentunit",
+          "noValue": "N/A"
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "sum_over_time({service_name=~\"$service\"} | json | unwrap gen_ai_usage_output_tokens [$__range]) / sum_over_time({service_name=~\"$service\"} | json | unwrap gen_ai_usage_input_tokens [$__range])", "legendFormat": "", "refId": "A", "instant": true }]
+    },
+
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 9 },
+      "id": 10,
+      "type": "timeseries",
+      "title": "Token Usage Over Time",
+      "description": "Input and output token consumption over time",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 15, "showPoints": "never" },
+          "unit": "short"
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Input Tokens" }, "properties": [{ "id": "color", "value": { "fixedColor": "blue", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "Output Tokens" }, "properties": [{ "id": "color", "value": { "fixedColor": "purple", "mode": "fixed" } }] }
+        ]
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["sum", "mean"] }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "expr": "sum_over_time({service_name=~\"$service\"} | json | unwrap gen_ai_usage_input_tokens [$__auto])", "legendFormat": "Input Tokens", "refId": "A" },
+        { "expr": "sum_over_time({service_name=~\"$service\"} | json | unwrap gen_ai_usage_output_tokens [$__auto])", "legendFormat": "Output Tokens", "refId": "B" }
+      ]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 9 },
+      "id": 11,
+      "type": "piechart",
+      "title": "Events by AI Model",
+      "description": "Distribution of Copilot events across AI models",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" }
+        }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] }, "tooltip": { "mode": "multi" }, "pieType": "donut", "reduceOptions": { "calcs": ["sum"] } },
+      "targets": [{ "expr": "sum by (gen_ai_request_model) (count_over_time({service_name=~\"$service\"} | json | gen_ai_request_model != \"\" [$__range]))", "legendFormat": "{{gen_ai_request_model}}", "refId": "A", "instant": true }]
+    },
+
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 17 },
+      "id": 12,
+      "type": "piechart",
+      "title": "Events by Operation Type",
+      "description": "Chat vs Completion vs other Copilot operations (from gen_ai.operation.name)",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" }
+        }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] }, "tooltip": { "mode": "multi" }, "pieType": "donut", "reduceOptions": { "calcs": ["sum"] } },
+      "targets": [{ "expr": "sum by (gen_ai_operation_name) (count_over_time({service_name=~\"$service\"} | json | gen_ai_operation_name != \"\" [$__range]))", "legendFormat": "{{gen_ai_operation_name}}", "refId": "A", "instant": true }]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 17 },
+      "id": 13,
+      "type": "barchart",
+      "title": "Token Usage by Model",
+      "description": "Input and output token consumption per AI model",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "unit": "short"
+        },
+        "overrides": [
+          { "matcher": { "id": "byRegexp", "options": ".*input.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "blue", "mode": "fixed" } }] },
+          { "matcher": { "id": "byRegexp", "options": ".*output.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "purple", "mode": "fixed" } }] }
+        ]
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi" }, "orientation": "horizontal", "stacking": "normal", "barWidth": 0.8, "groupWidth": 0.7 },
+      "targets": [
+        { "expr": "sum by (gen_ai_request_model) (sum_over_time({service_name=~\"$service\"} | json | gen_ai_request_model != \"\" | unwrap gen_ai_usage_input_tokens [$__range]))", "legendFormat": "input: {{gen_ai_request_model}}", "refId": "A", "instant": true },
+        { "expr": "sum by (gen_ai_request_model) (sum_over_time({service_name=~\"$service\"} | json | gen_ai_request_model != \"\" | unwrap gen_ai_usage_output_tokens [$__range]))", "legendFormat": "output: {{gen_ai_request_model}}", "refId": "B", "instant": true }
+      ]
+    },
+
+    {
+      "gridPos": { "h": 2, "w": 24, "x": 0, "y": 25 },
+      "id": 102,
+      "type": "text",
+      "title": "",
+      "options": { "mode": "markdown", "content": "---\n### Performance Deep-Dive" }
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 27 },
+      "id": 20,
+      "type": "timeseries",
+      "title": "Latency Percentiles by Operation",
+      "description": "P50 / P95 / P99 latency grouped by Copilot operation",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10, "showPoints": "never" },
+          "unit": "s"
+        }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "expr": "histogram_quantile(0.50, sum by (le, span_name) (rate(traces_spanmetrics_latency_bucket{service=~\"$service\"}[$__rate_interval])))", "legendFormat": "P50 {{span_name}}", "refId": "A" },
+        { "expr": "histogram_quantile(0.95, sum by (le, span_name) (rate(traces_spanmetrics_latency_bucket{service=~\"$service\"}[$__rate_interval])))", "legendFormat": "P95 {{span_name}}", "refId": "B" },
+        { "expr": "histogram_quantile(0.99, sum by (le, span_name) (rate(traces_spanmetrics_latency_bucket{service=~\"$service\"}[$__rate_interval])))", "legendFormat": "P99 {{span_name}}", "refId": "C" }
+      ]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 27 },
+      "id": 21,
+      "type": "heatmap",
+      "title": "Latency Distribution Heatmap",
+      "description": "Heatmap of span latencies — identify clusters and outliers",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s" } },
+      "options": {
+        "calculate": false,
+        "yAxis": { "unit": "s" },
+        "color": { "mode": "scheme", "scheme": "Oranges" },
+        "cellGap": 1,
+        "tooltip": { "show": true }
+      },
+      "targets": [{ "expr": "sum(increase(traces_spanmetrics_latency_bucket{service=~\"$service\"}[$__rate_interval])) by (le)", "legendFormat": "{{le}}", "refId": "A", "format": "heatmap" }]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 35 },
+      "id": 22,
+      "type": "timeseries",
+      "title": "Throughput vs Latency Correlation",
+      "description": "Overlays event rate with average latency to spot saturation",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10, "showPoints": "never", "axisBorderShow": false }
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Event Rate" }, "properties": [{ "id": "unit", "value": "ops" }, { "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }, { "id": "custom.axisPlacement", "value": "left" }] },
+          { "matcher": { "id": "byName", "options": "Avg Latency" }, "properties": [{ "id": "unit", "value": "s" }, { "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }, { "id": "custom.axisPlacement", "value": "right" }] }
+        ]
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "expr": "sum(rate(traces_spanmetrics_calls_total{service=~\"$service\"}[$__rate_interval]))", "legendFormat": "Event Rate", "refId": "A" },
+        { "expr": "sum(rate(traces_spanmetrics_latency_sum{service=~\"$service\"}[$__rate_interval])) / sum(rate(traces_spanmetrics_latency_count{service=~\"$service\"}[$__rate_interval]))", "legendFormat": "Avg Latency", "refId": "B" }
+      ]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 35 },
+      "id": 23,
+      "type": "timeseries",
+      "title": "Service Graph — Request Rate",
+      "description": "Inter-service request rate from Tempo service-graphs processor",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 15, "showPoints": "never" },
+          "unit": "reqps"
+        }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "sum"] }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "expr": "sum by (client, server) (rate(traces_service_graph_request_total[$__rate_interval]))", "legendFormat": "{{client}} → {{server}}", "refId": "A" }
+      ]
+    },
+
+    {
+      "gridPos": { "h": 2, "w": 24, "x": 0, "y": 43 },
+      "id": 103,
+      "type": "text",
+      "title": "",
+      "options": { "mode": "markdown", "content": "---\n### Error Intelligence" }
+    },
+    {
+      "gridPos": { "h": 4, "w": 8, "x": 0, "y": 45 },
+      "id": 30,
+      "type": "stat",
+      "title": "Error Rate %",
+      "description": "Percentage of events that resulted in errors",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 5 }, { "color": "red", "value": 20 }] },
+          "unit": "percent",
+          "noValue": "0%",
+          "max": 100,
+          "min": 0
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "(sum(increase(traces_spanmetrics_calls_total{service=~\"$service\", status_code=\"STATUS_CODE_ERROR\"}[$__range])) / sum(increase(traces_spanmetrics_calls_total{service=~\"$service\"}[$__range]))) * 100 OR vector(0)", "legendFormat": "", "refId": "A" }]
+    },
+    {
+      "gridPos": { "h": 4, "w": 8, "x": 8, "y": 45 },
+      "id": 31,
+      "type": "stat",
+      "title": "Failed Service Graph Requests",
+      "description": "Failed inter-service requests from service-graphs metrics",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 1 }, { "color": "red", "value": 50 }] },
+          "unit": "short",
+          "noValue": "0"
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "sum(increase(traces_service_graph_request_failed_total[$__range])) OR vector(0)", "legendFormat": "", "refId": "A" }]
+    },
+    {
+      "gridPos": { "h": 4, "w": 8, "x": 16, "y": 45 },
+      "id": 32,
+      "type": "stat",
+      "title": "Error Log Count",
+      "description": "Number of error-severity logs",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 1 }, { "color": "red", "value": 20 }] },
+          "unit": "short",
+          "noValue": "0"
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["sum"] } },
+      "targets": [{ "expr": "count_over_time({service_name=~\"$service\"} | json | detected_level = \"error\" [$__range])", "legendFormat": "", "refId": "A", "instant": true }]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 49 },
+      "id": 33,
+      "type": "timeseries",
+      "title": "Error Rate by Operation Over Time",
+      "description": "Error event rate per operation — spot problematic operations",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 15, "showPoints": "never" },
+          "unit": "ops"
+        }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["sum", "mean", "max"] }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "expr": "sum by (span_name) (rate(traces_spanmetrics_calls_total{service=~\"$service\", status_code=\"STATUS_CODE_ERROR\"}[$__rate_interval]))", "legendFormat": "{{span_name}}", "refId": "A" }]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 49 },
+      "id": 34,
+      "type": "logs",
+      "title": "Error Logs",
+      "description": "Recent error-level logs from Copilot services",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [{
+        "datasource": { "type": "loki", "uid": "loki" },
+        "expr": "{service_name=~\"$service\"} | json | detected_level = \"error\"",
+        "refId": "A"
+      }],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": true,
+        "enableLogDetails": true,
+        "sortOrder": "Descending"
+      }
+    },
+
+    {
+      "gridPos": { "h": 2, "w": 24, "x": 0, "y": 57 },
+      "id": 104,
+      "type": "text",
+      "title": "",
+      "options": { "mode": "markdown", "content": "---\n### Copilot Chat & Completion Analysis\nFiltered log views for specific Copilot operation types. Adjust the LogQL filter to match your `gen_ai.operation.name` values." }
+    },
+    {
+      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 59 },
+      "id": 40,
+      "type": "logs",
+      "title": "Chat Interaction Logs",
+      "description": "Logs for Copilot chat operations",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [{
+        "datasource": { "type": "loki", "uid": "loki" },
+        "expr": "{service_name=~\"$service\"} | json | gen_ai_operation_name = \"chat\"",
+        "refId": "A"
+      }],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": true,
+        "enableLogDetails": true,
+        "sortOrder": "Descending"
+      }
+    },
+    {
+      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 59 },
+      "id": 41,
+      "type": "logs",
+      "title": "Completion Logs",
+      "description": "Logs for Copilot code completion operations",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [{
+        "datasource": { "type": "loki", "uid": "loki" },
+        "expr": "{service_name=~\"$service\"} | json | gen_ai_operation_name = \"completion\"",
+        "refId": "A"
+      }],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": true,
+        "enableLogDetails": true,
+        "sortOrder": "Descending"
+      }
+    },
+
+    {
+      "gridPos": { "h": 2, "w": 24, "x": 0, "y": 69 },
+      "id": 105,
+      "type": "text",
+      "title": "",
+      "options": { "mode": "markdown", "content": "---\n### Trace Deep-Dive\nSearch Copilot traces with fine-grained filters. Click a **Trace ID** to open the waterfall view." }
+    },
+    {
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 71 },
+      "id": 50,
+      "type": "table",
+      "title": "Copilot Traces — Filtered",
+      "datasource": { "type": "tempo", "uid": "tempo" },
+      "targets": [{
+        "datasource": { "type": "tempo", "uid": "tempo" },
+        "queryType": "traceqlSearch",
+        "limit": 30,
+        "filters": [
+          { "id": "service-name", "tag": "service.name", "operator": "=~", "value": ["$service"], "scope": "resource" },
+          { "id": "status", "tag": "status", "operator": "=", "scope": "intrinsic" }
+        ]
+      }],
+      "fieldConfig": { "defaults": {} },
+      "options": { "showHeader": true, "sortBy": [{ "displayName": "Start time", "desc": true }] }
+    },
+
+    {
+      "gridPos": { "h": 2, "w": 24, "x": 0, "y": 81 },
+      "id": 106,
+      "type": "text",
+      "title": "",
+      "options": { "mode": "markdown", "content": "---\n### Full Log Stream" }
+    },
+    {
+      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 83 },
+      "id": 51,
+      "type": "logs",
+      "title": "All Copilot Logs",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [{
+        "datasource": { "type": "loki", "uid": "loki" },
+        "expr": "{service_name=~\"$service\"} | json",
+        "refId": "A"
+      }],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": true,
+        "enableLogDetails": true,
+        "sortOrder": "Descending"
+      }
+    }
+  ],
+
+  "templating": {
+    "list": [
+      {
+        "name": "service",
+        "label": "Service",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "query": "label_values(traces_spanmetrics_calls_total, service)",
+        "includeAll": true,
+        "allValue": ".*",
+        "current": { "text": "All", "value": "$__all" },
+        "multi": true,
+        "refresh": 2,
+        "sort": 1
+      }
+    ]
+  },
+
+  "time": { "from": "now-6h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["copilot", "opentelemetry", "insights", "gen-ai"],
+  "title": "GitHub Copilot - Smart Insights",
+  "uid": "copilot-insights",
+  "version": 1
+}
