@@ -1,0 +1,164 @@
+{
+  "annotations": { "list": [] },
+  "description": "Explore distributed traces from applications via Tempo",
+  "editable": true,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    { "title": "← Overview", "url": "/d/app-overview", "type": "link", "icon": "apps", "targetBlank": false }
+  ],
+  "panels": [
+    {
+      "gridPos": { "h": 2, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "type": "text",
+      "title": "",
+      "options": {
+        "mode": "markdown",
+        "content": "## Traces Explorer\nView distributed traces collected via OpenTelemetry. Select a **service** to filter, or browse recent traces below. Click a Trace ID to view the full waterfall."
+      }
+    },
+    {
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 2 },
+      "id": 1,
+      "type": "stat",
+      "title": "Total Spans (5m)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "sum(increase(otelcol_receiver_accepted_spans_total[5m]))", "legendFormat": "" }]
+    },
+    {
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 2 },
+      "id": 2,
+      "type": "stat",
+      "title": "Exported Spans (5m)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "blue", "value": null }] },
+          "unit": "short"
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "sum(increase(otelcol_exporter_sent_spans_total[5m]))", "legendFormat": "" }]
+    },
+    {
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 2 },
+      "id": 3,
+      "type": "stat",
+      "title": "Failed / Dropped Spans (5m)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] },
+          "unit": "short"
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "sum(increase(otelcol_receiver_refused_spans_total[5m])) or vector(0)", "legendFormat": "" }]
+    },
+    {
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
+      "id": 10,
+      "type": "timeseries",
+      "title": "Span Throughput by Service",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 20, "showPoints": "never", "axisBorderShow": false, "stacking": { "mode": "normal" } },
+          "unit": "ops"
+        }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "right", "calcs": ["sum", "mean", "max"] }, "tooltip": { "mode": "multi" } },
+      "targets": [{ "expr": "sum by (receiver, transport) (rate(otelcol_receiver_accepted_spans_total[1m]))", "legendFormat": "{{receiver}} ({{transport}})" }]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "id": 11,
+      "type": "timeseries",
+      "title": "Span Send Duration (p95)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10, "showPoints": "never" },
+          "unit": "ms"
+        }
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [{ "expr": "histogram_quantile(0.95, sum by (le, exporter) (rate(otelcol_exporter_send_duration_bucket{signal=\"traces\"}[5m])))", "legendFormat": "p95 {{exporter}}" }]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "id": 12,
+      "type": "timeseries",
+      "title": "Batch Processor - Batch Size",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10, "showPoints": "never" },
+          "unit": "short"
+        }
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [{ "expr": "histogram_quantile(0.95, sum by (le) (rate(otelcol_processor_batch_batch_send_size_bucket{signal=\"traces\"}[5m])))", "legendFormat": "p95 batch size" }]
+    },
+    {
+      "gridPos": { "h": 2, "w": 24, "x": 0, "y": 24 },
+      "id": 101,
+      "type": "text",
+      "title": "",
+      "options": { "mode": "markdown", "content": "---\n### Search Traces\nUse the Tempo table below to search and click into individual traces. Click a **Trace ID** to open the trace waterfall view." }
+    },
+    {
+      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 26 },
+      "id": 20,
+      "type": "table",
+      "title": "Recent Traces (from Tempo)",
+      "datasource": { "type": "tempo", "uid": "tempo" },
+      "targets": [{
+        "queryType": "traceqlSearch",
+        "limit": 30,
+        "filters": [
+          { "id": "status", "tag": "status", "operator": "=", "scope": "intrinsic" }
+        ]
+      }],
+      "options": { "showHeader": true, "footer": { "show": false } }
+    },
+    {
+      "gridPos": { "h": 2, "w": 24, "x": 0, "y": 38 },
+      "id": 102,
+      "type": "text",
+      "title": "",
+      "options": { "mode": "markdown", "content": "---\n### Service Graph\nVisualizes service-to-service communication based on span data. Requires `service-graphs` metrics generator in Tempo." }
+    },
+    {
+      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 40 },
+      "id": 25,
+      "type": "nodeGraph",
+      "title": "Service Map",
+      "datasource": { "type": "tempo", "uid": "tempo" },
+      "targets": [{ "queryType": "serviceMap" }]
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["opentelemetry", "traces", "tempo"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Traces Explorer",
+  "uid": "traces-explorer",
+  "version": 1
+}

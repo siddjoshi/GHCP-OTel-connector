@@ -1,0 +1,189 @@
+{
+  "annotations": { "list": [] },
+  "description": "Explore application logs collected via OpenTelemetry and stored in Loki",
+  "editable": true,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    { "title": "← Overview", "url": "/d/app-overview", "type": "link", "icon": "apps", "targetBlank": false }
+  ],
+  "panels": [
+    {
+      "gridPos": { "h": 2, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "type": "text",
+      "title": "",
+      "options": {
+        "mode": "markdown",
+        "content": "## Logs Explorer\nView and search application logs ingested via OpenTelemetry → Loki pipeline. Use the **Service** and **Severity** dropdowns to filter. Click the **TraceID** link in any log line to jump to the corresponding trace."
+      }
+    },
+    {
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 2 },
+      "id": 1,
+      "type": "stat",
+      "title": "Log Records Received (5m)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "purple", "value": null }] },
+          "unit": "short"
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "sum(increase(otelcol_receiver_accepted_log_records_total[5m]))", "legendFormat": "" }]
+    },
+    {
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 2 },
+      "id": 2,
+      "type": "stat",
+      "title": "Exported to Loki (5m)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "blue", "value": null }] },
+          "unit": "short"
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "sum(increase(otelcol_exporter_sent_log_records_total[5m]))", "legendFormat": "" }]
+    },
+    {
+      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 2 },
+      "id": 3,
+      "type": "stat",
+      "title": "Failed Log Exports (5m)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] },
+          "unit": "short"
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "sum(increase(otelcol_exporter_send_failed_log_records_total[5m])) or vector(0)", "legendFormat": "" }]
+    },
+    {
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 2 },
+      "id": 4,
+      "type": "piechart",
+      "title": "Logs by Severity",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [{
+        "expr": "sum by (detected_level) (count_over_time({job=~\".+\"}[$__range]))",
+        "legendFormat": "{{detected_level}}",
+        "refId": "A"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" }
+        }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "right" }, "pieType": "donut", "reduceOptions": { "calcs": ["sum"] } }
+    },
+    {
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 7 },
+      "id": 10,
+      "type": "timeseries",
+      "title": "Log Volume Over Time",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 0, "fillOpacity": 50, "showPoints": "never", "stacking": { "mode": "normal" }, "axisBorderShow": false },
+          "unit": "short"
+        }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "right", "calcs": ["sum"] }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "expr": "sum by (detected_level) (count_over_time({job=~\".+\"}[$__interval]))", "legendFormat": "{{detected_level}}", "refId": "A" }
+      ]
+    },
+    {
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 15 },
+      "id": 11,
+      "type": "timeseries",
+      "title": "Log Volume by Service",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 15, "showPoints": "never", "axisBorderShow": false },
+          "unit": "short"
+        }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "right", "calcs": ["sum"] }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "expr": "sum by (service_name) (count_over_time({job=~\".+\"}[$__interval]))", "legendFormat": "{{service_name}}", "refId": "A" }
+      ]
+    },
+    {
+      "gridPos": { "h": 2, "w": 24, "x": 0, "y": 23 },
+      "id": 101,
+      "type": "text",
+      "title": "",
+      "options": { "mode": "markdown", "content": "---\n### Live Log Stream\nShowing all logs. Use the filter bar above to narrow by service, severity, or keywords." }
+    },
+    {
+      "gridPos": { "h": 16, "w": 24, "x": 0, "y": 25 },
+      "id": 20,
+      "type": "logs",
+      "title": "All Application Logs",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [{
+        "expr": "{job=~\".+\"} | json",
+        "refId": "A"
+      }],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": true,
+        "enableLogDetails": true,
+        "sortOrder": "Descending",
+        "dedupStrategy": "none"
+      }
+    },
+    {
+      "gridPos": { "h": 2, "w": 24, "x": 0, "y": 41 },
+      "id": 102,
+      "type": "text",
+      "title": "",
+      "options": { "mode": "markdown", "content": "---\n### Error Logs Only" }
+    },
+    {
+      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 43 },
+      "id": 30,
+      "type": "logs",
+      "title": "Error Logs",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [{
+        "expr": "{job=~\".+\"} | json | detected_level =~ \"error|fatal|critical|err\"",
+        "refId": "A"
+      }],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": true,
+        "enableLogDetails": true,
+        "sortOrder": "Descending",
+        "dedupStrategy": "none"
+      }
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["opentelemetry", "logs", "loki"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Logs Explorer",
+  "uid": "logs-explorer",
+  "version": 1
+}

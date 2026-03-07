@@ -1,0 +1,252 @@
+{
+  "annotations": { "list": [] },
+  "description": "Explore application metrics received via OpenTelemetry and stored in Prometheus",
+  "editable": true,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    { "title": "← Overview", "url": "/d/app-overview", "type": "link", "icon": "apps", "targetBlank": false }
+  ],
+  "panels": [
+    {
+      "gridPos": { "h": 2, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "type": "text",
+      "title": "",
+      "options": {
+        "mode": "markdown",
+        "content": "## Metrics Explorer\nView application metrics received by the OTel Collector and stored in Prometheus. Top section shows collector health; bottom shows application-level metrics like HTTP request rates, durations, and error rates."
+      }
+    },
+    {
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 2 },
+      "id": 1,
+      "type": "stat",
+      "title": "Metric Points Received (5m)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "blue", "value": null }] },
+          "unit": "short"
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "sum(increase(otelcol_receiver_accepted_metric_points_total[5m]))", "legendFormat": "" }]
+    },
+    {
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 2 },
+      "id": 2,
+      "type": "stat",
+      "title": "Exported Metric Points (5m)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "sum(increase(otelcol_exporter_sent_metric_points_total[5m]))", "legendFormat": "" }]
+    },
+    {
+      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 2 },
+      "id": 3,
+      "type": "stat",
+      "title": "Failed Metric Exports (5m)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] },
+          "unit": "short"
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "sum(increase(otelcol_exporter_send_failed_metric_points_total[5m])) or vector(0)", "legendFormat": "" }]
+    },
+    {
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 2 },
+      "id": 4,
+      "type": "stat",
+      "title": "Active Time Series",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 50000 }, { "color": "red", "value": 200000 }] },
+          "unit": "short"
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "prometheus_tsdb_head_series", "legendFormat": "" }]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 7 },
+      "id": 10,
+      "type": "timeseries",
+      "title": "Metric Points Received / sec (by receiver)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 15, "showPoints": "never", "axisBorderShow": false },
+          "unit": "ops"
+        }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] }, "tooltip": { "mode": "multi" } },
+      "targets": [{ "expr": "sum by (receiver) (rate(otelcol_receiver_accepted_metric_points_total[1m]))", "legendFormat": "{{receiver}}" }]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 7 },
+      "id": 11,
+      "type": "timeseries",
+      "title": "Prometheus Remote Write Rate",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 15, "showPoints": "never", "axisBorderShow": false },
+          "unit": "ops"
+        }
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "targets": [{ "expr": "rate(otelcol_exporter_sent_metric_points_total{exporter=\"prometheusremotewrite\"}[1m])", "legendFormat": "sent to prometheus" }]
+    },
+    {
+      "gridPos": { "h": 2, "w": 24, "x": 0, "y": 15 },
+      "id": 101,
+      "type": "text",
+      "title": "",
+      "options": { "mode": "markdown", "content": "---\n### Application Metrics\nStandard OpenTelemetry HTTP/RPC metrics. These panels populate when your app exports `http.server.*` or `rpc.server.*` metrics via the OTel SDK." }
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 17 },
+      "id": 20,
+      "type": "timeseries",
+      "title": "HTTP Request Rate by Service",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 15, "showPoints": "never", "axisBorderShow": false },
+          "unit": "reqps"
+        }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "expr": "sum by (job) (rate(http_server_request_duration_seconds_count[1m]))", "legendFormat": "{{job}}" },
+        { "expr": "sum by (job) (rate(http_server_duration_milliseconds_count[1m]))", "legendFormat": "{{job}} (ms)" }
+      ]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 17 },
+      "id": 21,
+      "type": "timeseries",
+      "title": "HTTP Request Duration (p50, p95, p99)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10, "showPoints": "never", "axisBorderShow": false },
+          "unit": "s"
+        }
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "expr": "histogram_quantile(0.50, sum by (le) (rate(http_server_request_duration_seconds_bucket[5m])))", "legendFormat": "p50" },
+        { "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_request_duration_seconds_bucket[5m])))", "legendFormat": "p95" },
+        { "expr": "histogram_quantile(0.99, sum by (le) (rate(http_server_request_duration_seconds_bucket[5m])))", "legendFormat": "p99" }
+      ]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 25 },
+      "id": 22,
+      "type": "timeseries",
+      "title": "HTTP Error Rate (5xx)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 20, "showPoints": "never", "axisBorderShow": false },
+          "unit": "reqps"
+        }
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "expr": "sum by (job) (rate(http_server_request_duration_seconds_count{http_response_status_code=~\"5..\"}[1m]))", "legendFormat": "{{job}} 5xx" }
+      ]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 25 },
+      "id": 23,
+      "type": "timeseries",
+      "title": "HTTP Requests by Status Code",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10, "showPoints": "never", "axisBorderShow": false },
+          "unit": "reqps"
+        }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["sum"] }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "expr": "sum by (http_response_status_code) (rate(http_server_request_duration_seconds_count[1m]))", "legendFormat": "{{http_response_status_code}}" }
+      ]
+    },
+    {
+      "gridPos": { "h": 2, "w": 24, "x": 0, "y": 33 },
+      "id": 102,
+      "type": "text",
+      "title": "",
+      "options": { "mode": "markdown", "content": "---\n### Span Metrics (generated by Tempo)\nThese metrics are auto-generated from trace data by Tempo's metrics generator." }
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 35 },
+      "id": 30,
+      "type": "timeseries",
+      "title": "Span Duration by Service (p95)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10, "showPoints": "never", "axisBorderShow": false },
+          "unit": "s"
+        }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean"] }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "expr": "histogram_quantile(0.95, sum by (le, service) (rate(traces_spanmetrics_latency_bucket[5m])))", "legendFormat": "p95 {{service}}" }
+      ]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 35 },
+      "id": 31,
+      "type": "timeseries",
+      "title": "Span Call Rate by Service",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 15, "showPoints": "never", "axisBorderShow": false },
+          "unit": "ops"
+        }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "sum"] }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "expr": "sum by (service) (rate(traces_spanmetrics_calls_total[1m]))", "legendFormat": "{{service}}" }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["opentelemetry", "metrics", "prometheus"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Metrics Explorer",
+  "uid": "metrics-explorer",
+  "version": 1
+}

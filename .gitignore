@@ -1,0 +1,16 @@
+# Logs and temp files
+*.log
+tmp/
+
+# Docker volumes (if stored locally)
+data/
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
