@@ -1,0 +1,1012 @@
+{
+  "annotations": { "list": [] },
+  "description": "Verified analytics for GitHub Copilot — model performance, token usage, latency deep-dives, tool analysis, and error intelligence from OpenTelemetry data",
+  "editable": true,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    { "title": "← Copilot Usage", "url": "/d/copilot-usage", "type": "link", "icon": "apps", "targetBlank": false },
+    { "title": "Copilot Insights", "url": "/d/copilot-insights", "type": "link", "icon": "bolt", "targetBlank": false },
+    { "title": "Logs Explorer", "url": "/d/logs-explorer", "type": "link", "icon": "file-alt", "targetBlank": false }
+  ],
+  "panels": [
+    {
+      "gridPos": { "h": 3, "w": 24, "x": 0, "y": 0 },
+      "id": 1,
+      "type": "text",
+      "title": "",
+      "options": {
+        "mode": "markdown",
+        "content": "## GitHub Copilot — LogQL Insights\nAdvanced analytics derived from Copilot OpenTelemetry data. Covers **activity volume**, **model & token analysis**, **latency & TTFT**, **tool call analytics**, **top-N rankings**, and **error intelligence**."
+      }
+    },
+
+    {
+      "gridPos": { "h": 2, "w": 24, "x": 0, "y": 3 },
+      "id": 2,
+      "type": "text",
+      "title": "",
+      "options": { "mode": "markdown", "content": "---\n### Volume & Activity Overview" }
+    },
+    {
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 5 },
+      "id": 10,
+      "type": "stat",
+      "title": "Total Log Events",
+      "description": "Total Copilot log entries in time range",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "blue", "value": null }] },
+          "unit": "short",
+          "noValue": "0"
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["sum"] } },
+      "targets": [{ "expr": "sum(count_over_time({service_name=~\"$service\"} [$__range]))", "legendFormat": "", "refId": "A" }]
+    },
+    {
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 5 },
+      "id": 11,
+      "type": "stat",
+      "title": "Inference Events",
+      "description": "Total gen_ai.client.inference events",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "orange", "value": null }] },
+          "unit": "short",
+          "noValue": "0"
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["sum"] } },
+      "targets": [{ "expr": "sum(count_over_time({service_name=~\"$service\"} | event_name = `gen_ai.client.inference.operation.details` [$__range]))", "legendFormat": "", "refId": "A" }]
+    },
+    {
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 5 },
+      "id": 12,
+      "type": "stat",
+      "title": "Agent Turns",
+      "description": "Total copilot_chat.agent.turn events",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "green", "value": null }] },
+          "unit": "short",
+          "noValue": "0"
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["sum"] } },
+      "targets": [{ "expr": "sum(count_over_time({service_name=~\"$service\"} | event_name = `copilot_chat.agent.turn` [$__range]))", "legendFormat": "", "refId": "A" }]
+    },
+    {
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 5 },
+      "id": 13,
+      "type": "stat",
+      "title": "Tool Calls",
+      "description": "Total copilot_chat.tool.call events",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "purple", "value": null }] },
+          "unit": "short",
+          "noValue": "0"
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["sum"] } },
+      "targets": [{ "expr": "sum(count_over_time({service_name=~\"$service\"} | event_name = `copilot_chat.tool.call` [$__range]))", "legendFormat": "", "refId": "A" }]
+    },
+    {
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 5 },
+      "id": 14,
+      "type": "stat",
+      "title": "Sessions",
+      "description": "Total Copilot chat sessions (from Prometheus counter)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "yellow", "value": null }] },
+          "unit": "short",
+          "noValue": "0"
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "sum(increase(copilot_chat_session_count_total{job=~\"$service\"}[$__range])) OR vector(0)", "legendFormat": "", "refId": "A" }]
+    },
+    {
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 5 },
+      "id": 15,
+      "type": "stat",
+      "title": "Span Events",
+      "description": "Total span events from Tempo span-metrics",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "green", "value": null }] },
+          "unit": "short",
+          "noValue": "0"
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "sum(increase(traces_spanmetrics_calls_total{service=~\"$service\"}[$__range])) OR vector(0)", "legendFormat": "", "refId": "A" }]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 9 },
+      "id": 16,
+      "type": "timeseries",
+      "title": "Event Rate by Type (Loki)",
+      "description": "Rate of Copilot log events by event type",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 15, "showPoints": "never", "stacking": { "mode": "normal" } },
+          "unit": "short"
+        }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["sum", "mean"] }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "expr": "sum by (event_name) (count_over_time({service_name=~\"$service\"} | event_name != \"\" [$__auto]))", "legendFormat": "{{event_name}}", "refId": "A" }]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 9 },
+      "id": 17,
+      "type": "timeseries",
+      "title": "Span Rate by Operation (Prometheus)",
+      "description": "Rate of span events by operation name from Tempo span-metrics",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 15, "showPoints": "never" },
+          "unit": "ops"
+        }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["sum", "mean"] }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "expr": "sum by (span_name) (rate(traces_spanmetrics_calls_total{service=~\"$service\"}[$__rate_interval]))", "legendFormat": "{{span_name}}", "refId": "A" }]
+    },
+
+    {
+      "gridPos": { "h": 2, "w": 24, "x": 0, "y": 17 },
+      "id": 3,
+      "type": "text",
+      "title": "",
+      "options": { "mode": "markdown", "content": "---\n### AI Model & Token Analytics\nToken consumption and inference distribution across AI models. Data from both Loki structured metadata and Prometheus OTel metrics." }
+    },
+    {
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 19 },
+      "id": 20,
+      "type": "stat",
+      "title": "Total Input Tokens",
+      "description": "Sum of input tokens (from Loki structured metadata)",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "blue", "value": null }] },
+          "unit": "short",
+          "noValue": "0"
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["sum"] } },
+      "targets": [{ "expr": "sum(sum_over_time({service_name=~\"$service\"} | gen_ai_usage_input_tokens != \"\" | unwrap gen_ai_usage_input_tokens [$__range]))", "legendFormat": "", "refId": "A" }]
+    },
+    {
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 19 },
+      "id": 21,
+      "type": "stat",
+      "title": "Total Output Tokens",
+      "description": "Sum of output tokens (from Loki structured metadata)",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "purple", "value": null }] },
+          "unit": "short",
+          "noValue": "0"
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["sum"] } },
+      "targets": [{ "expr": "sum(sum_over_time({service_name=~\"$service\"} | gen_ai_usage_output_tokens != \"\" | unwrap gen_ai_usage_output_tokens [$__range]))", "legendFormat": "", "refId": "A" }]
+    },
+    {
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 19 },
+      "id": 22,
+      "type": "stat",
+      "title": "Total Input Tokens (Prom)",
+      "description": "Sum of input tokens from Prometheus gen_ai_client_token_usage histogram",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "blue", "value": null }] },
+          "unit": "short",
+          "noValue": "0"
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "sum(increase(gen_ai_client_token_usage_sum{job=~\"$service\", gen_ai_token_type=\"input\"}[$__range])) OR vector(0)", "legendFormat": "", "refId": "A" }]
+    },
+    {
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 19 },
+      "id": 23,
+      "type": "stat",
+      "title": "Total Output Tokens (Prom)",
+      "description": "Sum of output tokens from Prometheus gen_ai_client_token_usage histogram",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "purple", "value": null }] },
+          "unit": "short",
+          "noValue": "0"
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "sum(increase(gen_ai_client_token_usage_sum{job=~\"$service\", gen_ai_token_type=\"output\"}[$__range])) OR vector(0)", "legendFormat": "", "refId": "A" }]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 23 },
+      "id": 24,
+      "type": "timeseries",
+      "title": "Token Usage Over Time (Loki)",
+      "description": "Input vs output token consumption over time from Loki structured metadata",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 15, "showPoints": "never" },
+          "unit": "short"
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Input Tokens" }, "properties": [{ "id": "color", "value": { "fixedColor": "blue", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "Output Tokens" }, "properties": [{ "id": "color", "value": { "fixedColor": "purple", "mode": "fixed" } }] }
+        ]
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["sum", "mean"] }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "expr": "sum(sum_over_time({service_name=~\"$service\"} | gen_ai_usage_input_tokens != \"\" | unwrap gen_ai_usage_input_tokens [$__auto]))", "legendFormat": "Input Tokens", "refId": "A" },
+        { "expr": "sum(sum_over_time({service_name=~\"$service\"} | gen_ai_usage_output_tokens != \"\" | unwrap gen_ai_usage_output_tokens [$__auto]))", "legendFormat": "Output Tokens", "refId": "B" }
+      ]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 23 },
+      "id": 25,
+      "type": "piechart",
+      "title": "Inference Calls by Model (Loki)",
+      "description": "Distribution of inference events per AI model from Loki structured metadata",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" }
+        }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] }, "tooltip": { "mode": "multi" }, "pieType": "donut", "reduceOptions": { "calcs": ["sum"] } },
+      "targets": [{ "expr": "sum by (gen_ai_request_model) (count_over_time({service_name=~\"$service\"} | gen_ai_request_model != \"\" [$__range]))", "legendFormat": "{{gen_ai_request_model}}", "refId": "A" }]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 31 },
+      "id": 26,
+      "type": "barchart",
+      "title": "Token Usage by Model (Loki)",
+      "description": "Input and output tokens consumed per AI model",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "unit": "short"
+        },
+        "overrides": [
+          { "matcher": { "id": "byRegexp", "options": ".*input.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "blue", "mode": "fixed" } }] },
+          { "matcher": { "id": "byRegexp", "options": ".*output.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "purple", "mode": "fixed" } }] }
+        ]
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi" }, "orientation": "horizontal", "stacking": "normal", "barWidth": 0.8, "groupWidth": 0.7 },
+      "targets": [
+        { "expr": "sum by (gen_ai_request_model) (sum_over_time({service_name=~\"$service\"} | gen_ai_request_model != \"\" | gen_ai_usage_input_tokens != \"\" | unwrap gen_ai_usage_input_tokens [$__range]))", "legendFormat": "input: {{gen_ai_request_model}}", "refId": "A" },
+        { "expr": "sum by (gen_ai_request_model) (sum_over_time({service_name=~\"$service\"} | gen_ai_request_model != \"\" | gen_ai_usage_output_tokens != \"\" | unwrap gen_ai_usage_output_tokens [$__range]))", "legendFormat": "output: {{gen_ai_request_model}}", "refId": "B" }
+      ]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 31 },
+      "id": 27,
+      "type": "timeseries",
+      "title": "Token Usage by Model Over Time (Prom)",
+      "description": "Token consumption rate by model and type from Prometheus gen_ai_client_token_usage",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10, "showPoints": "never" },
+          "unit": "short"
+        }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["sum", "mean"] }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "expr": "sum by (gen_ai_request_model) (rate(gen_ai_client_token_usage_sum{job=~\"$service\", gen_ai_token_type=\"input\"}[$__rate_interval]))", "legendFormat": "input: {{gen_ai_request_model}}", "refId": "A" },
+        { "expr": "sum by (gen_ai_request_model) (rate(gen_ai_client_token_usage_sum{job=~\"$service\", gen_ai_token_type=\"output\"}[$__rate_interval]))", "legendFormat": "output: {{gen_ai_request_model}}", "refId": "B" }
+      ]
+    },
+
+    {
+      "gridPos": { "h": 2, "w": 24, "x": 0, "y": 39 },
+      "id": 4,
+      "type": "text",
+      "title": "",
+      "options": { "mode": "markdown", "content": "---\n### Performance & Latency Deep-Dive\nLatency percentiles, time-to-first-token (TTFT), operation duration, and throughput correlation." }
+    },
+    {
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 41 },
+      "id": 30,
+      "type": "stat",
+      "title": "Avg Latency (P50)",
+      "description": "Median span latency from Tempo span-metrics",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 2 }, { "color": "red", "value": 10 }] },
+          "unit": "s",
+          "noValue": "N/A"
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "histogram_quantile(0.50, sum by (le) (rate(traces_spanmetrics_latency_bucket{service=~\"$service\"}[$__rate_interval])))", "legendFormat": "", "refId": "A" }]
+    },
+    {
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 41 },
+      "id": 31,
+      "type": "stat",
+      "title": "P95 Latency",
+      "description": "95th percentile span latency",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 5 }, { "color": "red", "value": 20 }] },
+          "unit": "s",
+          "noValue": "N/A"
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "histogram_quantile(0.95, sum by (le) (rate(traces_spanmetrics_latency_bucket{service=~\"$service\"}[$__rate_interval])))", "legendFormat": "", "refId": "A" }]
+    },
+    {
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 41 },
+      "id": 32,
+      "type": "stat",
+      "title": "P99 Latency",
+      "description": "99th percentile span latency (worst-case tail)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 10 }, { "color": "red", "value": 30 }] },
+          "unit": "s",
+          "noValue": "N/A"
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "histogram_quantile(0.99, sum by (le) (rate(traces_spanmetrics_latency_bucket{service=~\"$service\"}[$__rate_interval])))", "legendFormat": "", "refId": "A" }]
+    },
+    {
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 41 },
+      "id": 33,
+      "type": "stat",
+      "title": "Avg TTFT",
+      "description": "Average time-to-first-token across all models",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 2 }, { "color": "red", "value": 5 }] },
+          "unit": "s",
+          "noValue": "N/A"
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "sum(rate(copilot_chat_time_to_first_token_sum{job=~\"$service\"}[$__rate_interval])) / sum(rate(copilot_chat_time_to_first_token_count{job=~\"$service\"}[$__rate_interval]))", "legendFormat": "", "refId": "A" }]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 45 },
+      "id": 34,
+      "type": "timeseries",
+      "title": "Latency Percentiles Over Time",
+      "description": "P50, P95, P99 latency trends from Tempo span-metrics",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10, "showPoints": "never" },
+          "unit": "s"
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "P50" }, "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "P95" }, "properties": [{ "id": "color", "value": { "fixedColor": "yellow", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "P99" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] }
+        ]
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "expr": "histogram_quantile(0.50, sum by (le) (rate(traces_spanmetrics_latency_bucket{service=~\"$service\"}[$__rate_interval])))", "legendFormat": "P50", "refId": "A" },
+        { "expr": "histogram_quantile(0.95, sum by (le) (rate(traces_spanmetrics_latency_bucket{service=~\"$service\"}[$__rate_interval])))", "legendFormat": "P95", "refId": "B" },
+        { "expr": "histogram_quantile(0.99, sum by (le) (rate(traces_spanmetrics_latency_bucket{service=~\"$service\"}[$__rate_interval])))", "legendFormat": "P99", "refId": "C" }
+      ]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 45 },
+      "id": 35,
+      "type": "timeseries",
+      "title": "Time-to-First-Token by Model",
+      "description": "Average TTFT per model from copilot_chat_time_to_first_token histogram",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10, "showPoints": "never" },
+          "unit": "s"
+        }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "expr": "sum by (gen_ai_request_model) (rate(copilot_chat_time_to_first_token_sum{job=~\"$service\"}[$__rate_interval])) / sum by (gen_ai_request_model) (rate(copilot_chat_time_to_first_token_count{job=~\"$service\"}[$__rate_interval]))", "legendFormat": "{{gen_ai_request_model}}", "refId": "A" }]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 53 },
+      "id": 36,
+      "type": "timeseries",
+      "title": "Avg Latency by Operation",
+      "description": "Average span latency per Copilot operation (span_name)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10, "showPoints": "never" },
+          "unit": "s"
+        }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "expr": "sum by (span_name) (rate(traces_spanmetrics_latency_sum{service=~\"$service\"}[$__rate_interval])) / sum by (span_name) (rate(traces_spanmetrics_latency_count{service=~\"$service\"}[$__rate_interval]))", "legendFormat": "{{span_name}}", "refId": "A" }]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 53 },
+      "id": 37,
+      "type": "timeseries",
+      "title": "Throughput vs Latency Correlation",
+      "description": "Overlays event rate with average latency — spot saturation points",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10, "showPoints": "never" }
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Event Rate" }, "properties": [{ "id": "unit", "value": "ops" }, { "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }, { "id": "custom.axisPlacement", "value": "left" }] },
+          { "matcher": { "id": "byName", "options": "Avg Latency" }, "properties": [{ "id": "unit", "value": "s" }, { "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }, { "id": "custom.axisPlacement", "value": "right" }] }
+        ]
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "expr": "sum(rate(traces_spanmetrics_calls_total{service=~\"$service\"}[$__rate_interval]))", "legendFormat": "Event Rate", "refId": "A" },
+        { "expr": "sum(rate(traces_spanmetrics_latency_sum{service=~\"$service\"}[$__rate_interval])) / sum(rate(traces_spanmetrics_latency_count{service=~\"$service\"}[$__rate_interval]))", "legendFormat": "Avg Latency", "refId": "B" }
+      ]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 61 },
+      "id": 38,
+      "type": "timeseries",
+      "title": "Inference Duration by Model (Prom)",
+      "description": "Average gen_ai operation duration per model from Prometheus histogram",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10, "showPoints": "never" },
+          "unit": "s"
+        }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "expr": "sum by (gen_ai_request_model) (rate(gen_ai_client_operation_duration_sum{job=~\"$service\"}[$__rate_interval])) / sum by (gen_ai_request_model) (rate(gen_ai_client_operation_duration_count{job=~\"$service\"}[$__rate_interval]))", "legendFormat": "{{gen_ai_request_model}}", "refId": "A" }]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 61 },
+      "id": 39,
+      "type": "heatmap",
+      "title": "Latency Distribution Heatmap",
+      "description": "Heatmap of span latencies — identify clusters and outliers",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s" } },
+      "options": {
+        "calculate": false,
+        "yAxis": { "unit": "s" },
+        "color": { "mode": "scheme", "scheme": "Oranges" },
+        "cellGap": 1,
+        "tooltip": { "show": true }
+      },
+      "targets": [{ "expr": "sum(increase(traces_spanmetrics_latency_bucket{service=~\"$service\"}[$__rate_interval])) by (le)", "legendFormat": "{{le}}", "refId": "A", "format": "heatmap" }]
+    },
+
+    {
+      "gridPos": { "h": 2, "w": 24, "x": 0, "y": 69 },
+      "id": 5,
+      "type": "text",
+      "title": "",
+      "options": { "mode": "markdown", "content": "---\n### Tool Call Analytics\nTool invocation counts, durations, success rates, and rankings from Prometheus counters and Loki logs." }
+    },
+    {
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 71 },
+      "id": 40,
+      "type": "stat",
+      "title": "Total Tool Calls",
+      "description": "Sum of all tool calls from Prometheus counter",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "blue", "value": null }] },
+          "unit": "short",
+          "noValue": "0"
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "sum(increase(copilot_chat_tool_call_count_total{job=~\"$service\"}[$__range])) OR vector(0)", "legendFormat": "", "refId": "A" }]
+    },
+    {
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 71 },
+      "id": 41,
+      "type": "stat",
+      "title": "Failed Tool Calls",
+      "description": "Tool calls where success=false from Prometheus counter",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 1 }, { "color": "red", "value": 10 }] },
+          "unit": "short",
+          "noValue": "0"
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "sum(increase(copilot_chat_tool_call_count_total{job=~\"$service\", success=\"false\"}[$__range])) OR vector(0)", "legendFormat": "", "refId": "A" }]
+    },
+    {
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 71 },
+      "id": 42,
+      "type": "stat",
+      "title": "Avg Tool Duration",
+      "description": "Average tool call duration from Prometheus histogram",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 5 }, { "color": "red", "value": 30 }] },
+          "unit": "s",
+          "noValue": "N/A"
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "sum(rate(copilot_chat_tool_call_duration_sum{job=~\"$service\"}[$__rate_interval])) / sum(rate(copilot_chat_tool_call_duration_count{job=~\"$service\"}[$__rate_interval]))", "legendFormat": "", "refId": "A" }]
+    },
+    {
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 71 },
+      "id": 43,
+      "type": "stat",
+      "title": "Avg Tool Calls / Turn",
+      "description": "Average tool_call_count per agent turn from Loki",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "green", "value": null }] },
+          "unit": "short",
+          "noValue": "N/A"
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["mean"] } },
+      "targets": [{ "expr": "avg_over_time({service_name=~\"$service\"} | event_name = `copilot_chat.agent.turn` | tool_call_count != \"\" | unwrap tool_call_count [$__range])", "legendFormat": "", "refId": "A" }]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 75 },
+      "id": 44,
+      "type": "piechart",
+      "title": "Tool Calls by Tool Name (Prom)",
+      "description": "Distribution of tool invocations from Prometheus counter",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" }
+        }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] }, "tooltip": { "mode": "multi" }, "pieType": "donut", "reduceOptions": { "calcs": ["sum"] } },
+      "targets": [{ "expr": "sum by (gen_ai_tool_name) (increase(copilot_chat_tool_call_count_total{job=~\"$service\"}[$__range]))", "legendFormat": "{{gen_ai_tool_name}}", "refId": "A", "instant": true }]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 75 },
+      "id": 45,
+      "type": "timeseries",
+      "title": "Tool Call Rate Over Time (Loki)",
+      "description": "Frequency of tool invocations over time by tool name",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 15, "showPoints": "never", "stacking": { "mode": "normal" } },
+          "unit": "short"
+        }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["sum"] }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "expr": "sum by (gen_ai_tool_name) (count_over_time({service_name=~\"$service\"} | event_name = `copilot_chat.tool.call` | gen_ai_tool_name != \"\" [$__auto]))", "legendFormat": "{{gen_ai_tool_name}}", "refId": "A" }]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 83 },
+      "id": 46,
+      "type": "timeseries",
+      "title": "Avg Tool Duration by Tool Name (Prom)",
+      "description": "Average tool call duration per tool from Prometheus histogram",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10, "showPoints": "never" },
+          "unit": "s"
+        }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "expr": "sum by (gen_ai_tool_name) (rate(copilot_chat_tool_call_duration_sum{job=~\"$service\"}[$__rate_interval])) / sum by (gen_ai_tool_name) (rate(copilot_chat_tool_call_duration_count{job=~\"$service\"}[$__rate_interval]))", "legendFormat": "{{gen_ai_tool_name}}", "refId": "A" }]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 83 },
+      "id": 47,
+      "type": "timeseries",
+      "title": "Avg Tool Duration Over Time (Loki)",
+      "description": "Average tool call duration_ms over time from Loki structured metadata",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 10, "showPoints": "never" },
+          "unit": "ms"
+        }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "expr": "sum by (gen_ai_tool_name) (avg_over_time({service_name=~\"$service\"} | event_name = `copilot_chat.tool.call` | gen_ai_tool_name != \"\" | duration_ms != \"\" | unwrap duration_ms [$__auto]))", "legendFormat": "{{gen_ai_tool_name}}", "refId": "A" }]
+    },
+
+    {
+      "gridPos": { "h": 2, "w": 24, "x": 0, "y": 91 },
+      "id": 6,
+      "type": "text",
+      "title": "",
+      "options": { "mode": "markdown", "content": "---\n### Top-N Leaderboards\nTop models, tools, and operations ranked by usage volume, token consumption, and latency." }
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 93 },
+      "id": 50,
+      "type": "barchart",
+      "title": "Top Tools by Invocation Count",
+      "description": "Most frequently invoked Copilot tools (Prometheus counter)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "unit": "short"
+        }
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" }, "orientation": "horizontal", "barWidth": 0.7 },
+      "targets": [{ "expr": "topk(10, sum by (gen_ai_tool_name) (increase(copilot_chat_tool_call_count_total{job=~\"$service\"}[$__range])))", "legendFormat": "{{gen_ai_tool_name}}", "refId": "A", "instant": true }]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 93 },
+      "id": 51,
+      "type": "barchart",
+      "title": "Top Operations by Event Count",
+      "description": "Most frequent Copilot span operations (Tempo span-metrics)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "unit": "short"
+        }
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" }, "orientation": "horizontal", "barWidth": 0.7 },
+      "targets": [{ "expr": "topk(10, sum by (span_name) (increase(traces_spanmetrics_calls_total{service=~\"$service\"}[$__range])))", "legendFormat": "{{span_name}}", "refId": "A", "instant": true }]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 101 },
+      "id": 52,
+      "type": "barchart",
+      "title": "Top Models by Token Consumption",
+      "description": "AI models ranked by total tokens consumed (Prometheus)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "unit": "short"
+        }
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" }, "orientation": "horizontal", "barWidth": 0.7 },
+      "targets": [{ "expr": "topk(10, sum by (gen_ai_request_model) (increase(gen_ai_client_token_usage_sum{job=~\"$service\"}[$__range])))", "legendFormat": "{{gen_ai_request_model}}", "refId": "A", "instant": true }]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 101 },
+      "id": 53,
+      "type": "barchart",
+      "title": "Top Operations by Avg Latency",
+      "description": "Slowest Copilot operations by average latency (Tempo span-metrics)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "unit": "s"
+        }
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" }, "orientation": "horizontal", "barWidth": 0.7 },
+      "targets": [{ "expr": "topk(10, sum by (span_name) (rate(traces_spanmetrics_latency_sum{service=~\"$service\"}[$__range])) / sum by (span_name) (rate(traces_spanmetrics_latency_count{service=~\"$service\"}[$__range])))", "legendFormat": "{{span_name}}", "refId": "A", "instant": true }]
+    },
+
+    {
+      "gridPos": { "h": 2, "w": 24, "x": 0, "y": 109 },
+      "id": 7,
+      "type": "text",
+      "title": "",
+      "options": { "mode": "markdown", "content": "---\n### Error Intelligence\nError rates, failed tool calls, error breakdowns, and error log details." }
+    },
+    {
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 111 },
+      "id": 60,
+      "type": "stat",
+      "title": "Error Rate %",
+      "description": "Percentage of span events with error status",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 5 }, { "color": "red", "value": 20 }] },
+          "unit": "percent",
+          "noValue": "0%",
+          "max": 100,
+          "min": 0,
+          "decimals": 1
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "(sum(increase(traces_spanmetrics_calls_total{service=~\"$service\", status_code=\"STATUS_CODE_ERROR\"}[$__range])) / sum(increase(traces_spanmetrics_calls_total{service=~\"$service\"}[$__range]))) * 100 OR vector(0)", "legendFormat": "", "refId": "A" }]
+    },
+    {
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 111 },
+      "id": 61,
+      "type": "stat",
+      "title": "Error Spans Total",
+      "description": "Number of span events with STATUS_CODE_ERROR",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 1 }, { "color": "red", "value": 20 }] },
+          "unit": "short",
+          "noValue": "0"
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "sum(increase(traces_spanmetrics_calls_total{service=~\"$service\", status_code=\"STATUS_CODE_ERROR\"}[$__range])) OR vector(0)", "legendFormat": "", "refId": "A" }]
+    },
+    {
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 111 },
+      "id": 62,
+      "type": "stat",
+      "title": "Failed Tool Calls (Prom)",
+      "description": "Tool calls with success=false from Prometheus counter",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 1 }, { "color": "red", "value": 10 }] },
+          "unit": "short",
+          "noValue": "0"
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "sum(increase(copilot_chat_tool_call_count_total{job=~\"$service\", success=\"false\"}[$__range])) OR vector(0)", "legendFormat": "", "refId": "A" }]
+    },
+    {
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 111 },
+      "id": 63,
+      "type": "stat",
+      "title": "Failed Tool Calls (Loki)",
+      "description": "Tool calls where success=false from Loki logs",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "orange", "value": 1 }, { "color": "red", "value": 10 }] },
+          "unit": "short",
+          "noValue": "0"
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["sum"] } },
+      "targets": [{ "expr": "sum(count_over_time({service_name=~\"$service\"} | event_name = `copilot_chat.tool.call` | success = `false` [$__range]))", "legendFormat": "", "refId": "A" }]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 115 },
+      "id": 64,
+      "type": "timeseries",
+      "title": "Error Rate Over Time (by Status)",
+      "description": "Rate of error vs ok span events over time",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 15, "showPoints": "never" },
+          "unit": "ops"
+        },
+        "overrides": [
+          { "matcher": { "id": "byRegexp", "options": ".*ERROR.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] },
+          { "matcher": { "id": "byRegexp", "options": ".*OK.*|.*UNSET.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }] }
+        ]
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["sum", "mean"] }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "expr": "sum by (status_code) (rate(traces_spanmetrics_calls_total{service=~\"$service\"}[$__rate_interval]))", "legendFormat": "{{status_code}}", "refId": "A" }]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 115 },
+      "id": 65,
+      "type": "timeseries",
+      "title": "Error Rate by Operation",
+      "description": "Error event rate per operation from span-metrics",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 15, "showPoints": "never" },
+          "unit": "ops"
+        }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["sum", "mean", "max"] }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [{ "expr": "sum by (span_name) (rate(traces_spanmetrics_calls_total{service=~\"$service\", status_code=\"STATUS_CODE_ERROR\"}[$__rate_interval]))", "legendFormat": "{{span_name}}", "refId": "A" }]
+    },
+    {
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 123 },
+      "id": 66,
+      "type": "logs",
+      "title": "Failed Tool Call Logs",
+      "description": "Detailed Loki logs for tool calls that failed (success=false)",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [{
+        "datasource": { "type": "loki", "uid": "loki" },
+        "expr": "{service_name=~\"$service\"} | event_name = `copilot_chat.tool.call` | success = `false`",
+        "refId": "A"
+      }],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": true,
+        "enableLogDetails": true,
+        "sortOrder": "Descending"
+      }
+    },
+
+    {
+      "gridPos": { "h": 2, "w": 24, "x": 0, "y": 131 },
+      "id": 8,
+      "type": "text",
+      "title": "",
+      "options": { "mode": "markdown", "content": "---\n### Log & Trace Exploration\nFiltered log views by event type and recent traces from Tempo." }
+    },
+    {
+      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 133 },
+      "id": 70,
+      "type": "logs",
+      "title": "Inference Event Logs",
+      "description": "GenAI inference details — model, tokens, operation metadata",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [{
+        "datasource": { "type": "loki", "uid": "loki" },
+        "expr": "{service_name=~\"$service\"} | event_name = `gen_ai.client.inference.operation.details`",
+        "refId": "A"
+      }],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": true,
+        "enableLogDetails": true,
+        "sortOrder": "Descending"
+      }
+    },
+    {
+      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 133 },
+      "id": 71,
+      "type": "logs",
+      "title": "Agent Turn Logs",
+      "description": "Copilot agent turn events — token usage, tool call counts, session details",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [{
+        "datasource": { "type": "loki", "uid": "loki" },
+        "expr": "{service_name=~\"$service\"} | event_name = `copilot_chat.agent.turn`",
+        "refId": "A"
+      }],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": true,
+        "enableLogDetails": true,
+        "sortOrder": "Descending"
+      }
+    },
+    {
+      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 143 },
+      "id": 72,
+      "type": "logs",
+      "title": "Tool Call Logs",
+      "description": "All Copilot tool invocation events — tool name, success, duration",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [{
+        "datasource": { "type": "loki", "uid": "loki" },
+        "expr": "{service_name=~\"$service\"} | event_name = `copilot_chat.tool.call`",
+        "refId": "A"
+      }],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": true,
+        "enableLogDetails": true,
+        "sortOrder": "Descending"
+      }
+    },
+    {
+      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 143 },
+      "id": 73,
+      "type": "table",
+      "title": "Recent Traces (Tempo)",
+      "description": "Latest Copilot traces — click a Trace ID to open waterfall view",
+      "datasource": { "type": "tempo", "uid": "tempo" },
+      "targets": [{
+        "datasource": { "type": "tempo", "uid": "tempo" },
+        "queryType": "traceqlSearch",
+        "limit": 30,
+        "filters": [
+          { "id": "service-name", "tag": "service.name", "operator": "=~", "value": ["$service"], "scope": "resource" },
+          { "id": "status", "tag": "status", "operator": "=", "scope": "intrinsic" }
+        ]
+      }],
+      "fieldConfig": { "defaults": {} },
+      "options": { "showHeader": true, "sortBy": [{ "displayName": "Start time", "desc": true }] }
+    }
+  ],
+
+  "templating": {
+    "list": [
+      {
+        "name": "service",
+        "label": "Service",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "query": "label_values(traces_spanmetrics_calls_total, service)",
+        "includeAll": true,
+        "allValue": ".*",
+        "current": { "text": "All", "value": "$__all" },
+        "multi": true,
+        "refresh": 2,
+        "sort": 1
+      }
+    ]
+  },
+
+  "time": { "from": "now-6h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["copilot", "opentelemetry", "logql", "insights", "gen-ai"],
+  "title": "GitHub Copilot - LogQL Insights",
+  "uid": "copilot-logql-insights",
+  "version": 1
+}
