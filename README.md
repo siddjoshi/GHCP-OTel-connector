@@ -154,3 +154,7 @@ All datasources are automatically provisioned with cross-linking:
 - **Loki:** http://localhost:3100/ready
 - **Tempo:** http://localhost:3200/ready
 - **Grafana:** http://localhost:3000/api/health
+
+## Documentation
+
+- **[Telemetry Data & Dashboard Reference](docs/TELEMETRY_REFERENCE.md)** — Comprehensive catalog of all 70 Prometheus metrics, 26 Loki structured metadata fields, Tempo span attributes (including prompt/response content), all 10 Grafana dashboards, and derived intelligence.

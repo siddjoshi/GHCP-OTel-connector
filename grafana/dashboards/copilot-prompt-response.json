@@ -1,0 +1,440 @@
+{
+  "annotations": { "list": [] },
+  "description": "Explore Copilot AI conversations — session timelines, inference request details, and prompt/response content when available",
+  "editable": true,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    { "title": "← Copilot Usage", "url": "/d/copilot-usage", "type": "link", "icon": "apps", "targetBlank": false },
+    { "title": "Copilot Insights", "url": "/d/copilot-insights", "type": "link", "icon": "bolt", "targetBlank": false },
+    { "title": "Advanced Metrics →", "url": "/d/copilot-advanced-metrics", "type": "link", "icon": "graph-bar", "targetBlank": false }
+  ],
+  "panels": [
+    {
+      "gridPos": { "h": 3, "w": 24, "x": 0, "y": 0 },
+      "id": 1,
+      "type": "text",
+      "title": "",
+      "options": {
+        "mode": "markdown",
+        "content": "## Copilot Prompt & Response Explorer\nExplore AI conversation flow — session timelines, inference request parameters, and prompt/response content. Content panels activate when `gen_ai.content.prompt` / `gen_ai.content.completion` events are emitted by the instrumentation."
+      }
+    },
+
+    {
+      "gridPos": { "h": 2, "w": 24, "x": 0, "y": 3 },
+      "id": 2,
+      "type": "text",
+      "title": "",
+      "options": { "mode": "markdown", "content": "---\n### Conversation Overview" }
+    },
+    {
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 5 },
+      "id": 10,
+      "type": "stat",
+      "title": "Total Sessions",
+      "description": "Distinct copilot_chat.session.start events",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "blue", "value": null }] },
+          "unit": "short",
+          "noValue": "0"
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["sum"] } },
+      "targets": [{ "expr": "sum(count_over_time({service_name=~\"$service\"} | event_name = `copilot_chat.session.start` [$__range]))", "legendFormat": "", "refId": "A" }]
+    },
+    {
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 5 },
+      "id": 11,
+      "type": "stat",
+      "title": "Total Agent Turns",
+      "description": "Total copilot_chat.agent.turn events",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "green", "value": null }] },
+          "unit": "short",
+          "noValue": "0"
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["sum"] } },
+      "targets": [{ "expr": "sum(count_over_time({service_name=~\"$service\"} | event_name = `copilot_chat.agent.turn` [$__range]))", "legendFormat": "", "refId": "A" }]
+    },
+    {
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 5 },
+      "id": 12,
+      "type": "stat",
+      "title": "Total Inferences",
+      "description": "Total gen_ai.client.inference.operation.details events",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "orange", "value": null }] },
+          "unit": "short",
+          "noValue": "0"
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["sum"] } },
+      "targets": [{ "expr": "sum(count_over_time({service_name=~\"$service\"} | event_name = `gen_ai.client.inference.operation.details` [$__range]))", "legendFormat": "", "refId": "A" }]
+    },
+    {
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 5 },
+      "id": 13,
+      "type": "stat",
+      "title": "Unique Models",
+      "description": "Distinct AI models used across inferences",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "steps": [{ "color": "purple", "value": null }] },
+          "unit": "short",
+          "noValue": "0"
+        }
+      },
+      "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [{ "expr": "count(count by (gen_ai_response_model) (gen_ai_client_token_usage_count{job=~\"$service\"}))", "legendFormat": "", "refId": "A" }]
+    },
+
+    {
+      "gridPos": { "h": 2, "w": 24, "x": 0, "y": 9 },
+      "id": 3,
+      "type": "text",
+      "title": "",
+      "options": { "mode": "markdown", "content": "---\n### Session Timeline & Depth" }
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 11 },
+      "id": 20,
+      "type": "timeseries",
+      "title": "Session Start Rate",
+      "description": "Rate of new Copilot sessions over time",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "fixed", "fixedColor": "blue" },
+          "custom": { "lineWidth": 2, "fillOpacity": 20, "showPoints": "auto", "pointSize": 6 },
+          "unit": "short"
+        }
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "targets": [{ "expr": "sum(count_over_time({service_name=~\"$service\"} | event_name = `copilot_chat.session.start` [$__auto]))", "legendFormat": "Sessions", "refId": "A" }]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 11 },
+      "id": 21,
+      "type": "timeseries",
+      "title": "Turns per Interval",
+      "description": "Agent turns and tool calls over time",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 15, "showPoints": "never", "stacking": { "mode": "normal" } },
+          "unit": "short"
+        }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["sum"] }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "expr": "sum(count_over_time({service_name=~\"$service\"} | event_name = `copilot_chat.agent.turn` [$__auto]))", "legendFormat": "Agent Turns", "refId": "A" },
+        { "expr": "sum(count_over_time({service_name=~\"$service\"} | event_name = `copilot_chat.tool.call` [$__auto]))", "legendFormat": "Tool Calls", "refId": "B" },
+        { "expr": "sum(count_over_time({service_name=~\"$service\"} | event_name = `gen_ai.client.inference.operation.details` [$__auto]))", "legendFormat": "Inferences", "refId": "C" }
+      ]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 19 },
+      "id": 22,
+      "type": "barchart",
+      "title": "Turn Depth by Session",
+      "description": "Max turn_index reached per session — how deep do conversations go?",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "unit": "short"
+        }
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" }, "orientation": "horizontal", "barWidth": 0.7 },
+      "targets": [{ "expr": "max by (session_id) (max_over_time({service_name=~\"$service\"} | event_name = `copilot_chat.agent.turn` | turn_index != \"\" | unwrap turn_index [$__range]))", "legendFormat": "{{session_id}}", "refId": "A" }]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 19 },
+      "id": 23,
+      "type": "timeseries",
+      "title": "Tokens per Turn Over Time",
+      "description": "Input and output tokens consumed per agent turn",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "lineWidth": 2, "fillOpacity": 15, "showPoints": "never" },
+          "unit": "short"
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Input Tokens/Turn" }, "properties": [{ "id": "color", "value": { "fixedColor": "blue", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "Output Tokens/Turn" }, "properties": [{ "id": "color", "value": { "fixedColor": "purple", "mode": "fixed" } }] }
+        ]
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "sum"] }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "expr": "avg_over_time({service_name=~\"$service\"} | event_name = `copilot_chat.agent.turn` | gen_ai_usage_input_tokens != \"\" | unwrap gen_ai_usage_input_tokens [$__auto])", "legendFormat": "Input Tokens/Turn", "refId": "A" },
+        { "expr": "avg_over_time({service_name=~\"$service\"} | event_name = `copilot_chat.agent.turn` | gen_ai_usage_output_tokens != \"\" | unwrap gen_ai_usage_output_tokens [$__auto])", "legendFormat": "Output Tokens/Turn", "refId": "B" }
+      ]
+    },
+
+    {
+      "gridPos": { "h": 2, "w": 24, "x": 0, "y": 27 },
+      "id": 4,
+      "type": "text",
+      "title": "",
+      "options": { "mode": "markdown", "content": "---\n### Inference Request Parameters\nAnalysis of AI model request configuration — temperature, max tokens, finish reasons, and models used." }
+    },
+    {
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 29 },
+      "id": 30,
+      "type": "piechart",
+      "title": "Request Temperature Distribution",
+      "description": "Distribution of gen_ai_request_temperature values across inferences",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" }
+        }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] }, "tooltip": { "mode": "multi" }, "pieType": "donut", "reduceOptions": { "calcs": ["sum"] } },
+      "targets": [{ "expr": "sum by (gen_ai_request_temperature) (count_over_time({service_name=~\"$service\"} | gen_ai_request_temperature != \"\" [$__range]))", "legendFormat": "temp={{gen_ai_request_temperature}}", "refId": "A" }]
+    },
+    {
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 29 },
+      "id": 31,
+      "type": "piechart",
+      "title": "Finish Reasons",
+      "description": "How inference calls completed — stop, length, tool_calls, etc.",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" }
+        }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] }, "tooltip": { "mode": "multi" }, "pieType": "donut", "reduceOptions": { "calcs": ["sum"] } },
+      "targets": [{ "expr": "sum by (gen_ai_response_finish_reasons) (count_over_time({service_name=~\"$service\"} | gen_ai_response_finish_reasons != \"\" [$__range]))", "legendFormat": "{{gen_ai_response_finish_reasons}}", "refId": "A" }]
+    },
+    {
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 29 },
+      "id": 32,
+      "type": "barchart",
+      "title": "Max Tokens Requested",
+      "description": "Distribution of gen_ai_request_max_tokens values across inferences",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "unit": "short"
+        }
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" }, "orientation": "horizontal", "barWidth": 0.7 },
+      "targets": [{ "expr": "sum by (gen_ai_request_max_tokens) (count_over_time({service_name=~\"$service\"} | gen_ai_request_max_tokens != \"\" [$__range]))", "legendFormat": "max_tokens={{gen_ai_request_max_tokens}}", "refId": "A" }]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 37 },
+      "id": 33,
+      "type": "piechart",
+      "title": "Request Model vs Response Model",
+      "description": "Models requested vs models that actually responded (may differ due to routing)",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" }
+        }
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] }, "tooltip": { "mode": "multi" }, "pieType": "donut", "reduceOptions": { "calcs": ["sum"] } },
+      "targets": [
+        { "expr": "sum by (gen_ai_request_model) (count_over_time({service_name=~\"$service\"} | gen_ai_request_model != \"\" [$__range]))", "legendFormat": "req: {{gen_ai_request_model}}", "refId": "A" }
+      ]
+    },
+    {
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 37 },
+      "id": 34,
+      "type": "barchart",
+      "title": "Tokens per Inference by Model",
+      "description": "Average input/output tokens per inference grouped by request model",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "unit": "short"
+        },
+        "overrides": [
+          { "matcher": { "id": "byRegexp", "options": ".*input.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "blue", "mode": "fixed" } }] },
+          { "matcher": { "id": "byRegexp", "options": ".*output.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "purple", "mode": "fixed" } }] }
+        ]
+      },
+      "options": { "legend": { "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi" }, "orientation": "horizontal", "stacking": "normal", "barWidth": 0.8, "groupWidth": 0.7 },
+      "targets": [
+        { "expr": "sum by (gen_ai_request_model) (avg_over_time({service_name=~\"$service\"} | gen_ai_request_model != \"\" | gen_ai_usage_input_tokens != \"\" | unwrap gen_ai_usage_input_tokens [$__range]))", "legendFormat": "input: {{gen_ai_request_model}}", "refId": "A" },
+        { "expr": "sum by (gen_ai_request_model) (avg_over_time({service_name=~\"$service\"} | gen_ai_request_model != \"\" | gen_ai_usage_output_tokens != \"\" | unwrap gen_ai_usage_output_tokens [$__range]))", "legendFormat": "output: {{gen_ai_request_model}}", "refId": "B" }
+      ]
+    },
+
+    {
+      "gridPos": { "h": 2, "w": 24, "x": 0, "y": 45 },
+      "id": 5,
+      "type": "text",
+      "title": "",
+      "options": { "mode": "markdown", "content": "---\n### Prompt & Response Content (from Tempo Traces)\nContent is captured as `gen_ai.input.messages` and `gen_ai.output.messages` span attributes on chat spans. Requires `github.copilot.chat.otel.captureContent` to be enabled. Click a **Trace ID** to view the full conversation with prompts and responses in the trace waterfall." }
+    },
+    {
+      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 47 },
+      "id": 40,
+      "type": "table",
+      "title": "Traces with Prompt/Response Content",
+      "description": "Traces containing gen_ai.input.messages and gen_ai.output.messages — click Trace ID to view full conversation content in the waterfall",
+      "datasource": { "type": "tempo", "uid": "tempo" },
+      "targets": [{
+        "datasource": { "type": "tempo", "uid": "tempo" },
+        "queryType": "traceql",
+        "query": "{ span.gen_ai.input.messages != \"\" && span.gen_ai.output.messages != \"\" }",
+        "limit": 30,
+        "refId": "A"
+      }],
+      "fieldConfig": { "defaults": {} },
+      "options": { "showHeader": true, "sortBy": [{ "displayName": "Start time", "desc": true }] }
+    },
+    {
+      "gridPos": { "h": 12, "w": 12, "x": 0, "y": 59 },
+      "id": 41,
+      "type": "table",
+      "title": "Traces with Input Messages Only",
+      "description": "All traces where prompts were captured (gen_ai.input.messages attribute present)",
+      "datasource": { "type": "tempo", "uid": "tempo" },
+      "targets": [{
+        "datasource": { "type": "tempo", "uid": "tempo" },
+        "queryType": "traceql",
+        "query": "{ span.gen_ai.input.messages != \"\" }",
+        "limit": 20,
+        "refId": "A"
+      }],
+      "fieldConfig": { "defaults": {} },
+      "options": { "showHeader": true, "sortBy": [{ "displayName": "Start time", "desc": true }] }
+    },
+    {
+      "gridPos": { "h": 12, "w": 12, "x": 12, "y": 59 },
+      "id": 42,
+      "type": "table",
+      "title": "Traces with Output Messages Only",
+      "description": "All traces where responses were captured (gen_ai.output.messages attribute present)",
+      "datasource": { "type": "tempo", "uid": "tempo" },
+      "targets": [{
+        "datasource": { "type": "tempo", "uid": "tempo" },
+        "queryType": "traceql",
+        "query": "{ span.gen_ai.output.messages != \"\" }",
+        "limit": 20,
+        "refId": "A"
+      }],
+      "fieldConfig": { "defaults": {} },
+      "options": { "showHeader": true, "sortBy": [{ "displayName": "Start time", "desc": true }] }
+    },
+
+    {
+      "gridPos": { "h": 2, "w": 24, "x": 0, "y": 71 },
+      "id": 6,
+      "type": "text",
+      "title": "",
+      "options": { "mode": "markdown", "content": "---\n### Inference & Session Log Explorer\nDetailed log views for inference operations and session lifecycle events." }
+    },
+    {
+      "gridPos": { "h": 10, "w": 12, "x": 0, "y": 73 },
+      "id": 50,
+      "type": "logs",
+      "title": "Inference Detail Logs",
+      "description": "Full inference operation details — model, tokens, temperature, finish reasons",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [{
+        "datasource": { "type": "loki", "uid": "loki" },
+        "expr": "{service_name=~\"$service\"} | event_name = `gen_ai.client.inference.operation.details`",
+        "refId": "A"
+      }],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": true,
+        "enableLogDetails": true,
+        "sortOrder": "Descending"
+      }
+    },
+    {
+      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 73 },
+      "id": 51,
+      "type": "logs",
+      "title": "Session Start Logs",
+      "description": "Session lifecycle — agent name, model, session ID",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [{
+        "datasource": { "type": "loki", "uid": "loki" },
+        "expr": "{service_name=~\"$service\"} | event_name = `copilot_chat.session.start`",
+        "refId": "A"
+      }],
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": true,
+        "enableLogDetails": true,
+        "sortOrder": "Descending"
+      }
+    },
+    {
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 83 },
+      "id": 52,
+      "type": "table",
+      "title": "Recent Copilot Traces",
+      "description": "Click a Trace ID to view full span waterfall",
+      "datasource": { "type": "tempo", "uid": "tempo" },
+      "targets": [{
+        "datasource": { "type": "tempo", "uid": "tempo" },
+        "queryType": "traceqlSearch",
+        "limit": 30,
+        "filters": [
+          { "id": "service-name", "tag": "service.name", "operator": "=~", "value": ["$service"], "scope": "resource" },
+          { "id": "status", "tag": "status", "operator": "=", "scope": "intrinsic" }
+        ]
+      }],
+      "fieldConfig": { "defaults": {} },
+      "options": { "showHeader": true, "sortBy": [{ "displayName": "Start time", "desc": true }] }
+    }
+  ],
+
+  "templating": {
+    "list": [
+      {
+        "name": "service",
+        "label": "Service",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "query": "label_values(traces_spanmetrics_calls_total, service)",
+        "includeAll": true,
+        "allValue": ".*",
+        "current": { "text": "All", "value": "$__all" },
+        "multi": true,
+        "refresh": 2,
+        "sort": 1
+      }
+    ]
+  },
+
+  "time": { "from": "now-6h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["copilot", "opentelemetry", "gen-ai", "prompt-response"],
+  "title": "GitHub Copilot - Prompt & Response Explorer",
+  "uid": "copilot-prompt-response",
+  "version": 1
+}

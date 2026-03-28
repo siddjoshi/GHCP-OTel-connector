@@ -7,6 +7,8 @@
   "links": [
     { "title": "← Copilot Usage", "url": "/d/copilot-usage", "type": "link", "icon": "apps", "targetBlank": false },
     { "title": "Copilot Insights", "url": "/d/copilot-insights", "type": "link", "icon": "bolt", "targetBlank": false },
+    { "title": "Advanced Metrics", "url": "/d/copilot-advanced-metrics", "type": "link", "icon": "graph-bar", "targetBlank": false },
+    { "title": "Prompt Explorer", "url": "/d/copilot-prompt-response", "type": "link", "icon": "file-alt", "targetBlank": false },
     { "title": "Logs Explorer", "url": "/d/logs-explorer", "type": "link", "icon": "file-alt", "targetBlank": false }
   ],
   "panels": [
